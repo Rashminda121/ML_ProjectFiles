@@ -29,3 +29,31 @@ for nc = 1:length(Temp_Acc_Data)
     % Concatenate each 36-by-43 matrix vertically
     Temp_Acc_Data_FD = [Temp_Acc_Data_FD; Temp_Acc_Data{nc}];
 end
+
+
+% Number of rows in the concatenated data
+num_rows = size(Temp_Acc_Data_FD, 1);
+
+% Initialize an index for labeling
+labelIndex = 1;
+
+% Loop through the data in blocks of 36 rows
+for i = 1:36:num_rows
+    % Determine the end row for the current block
+    endRow = min(i + 35, num_rows);
+    
+    % Create a temporary label array (0s for all rows)
+    Temp_Acc_Data_FD_Labels = zeros(num_rows, 1);
+    
+    % Label the first 36 rows in this block as 1
+    Temp_Acc_Data_FD_Labels(i:endRow) = 1;
+    
+    % Store the labeled data in the corresponding Temp_Acc_Data_FD_U variable
+    eval(['Temp_Acc_Data_FD_U' num2str(labelIndex) ' = [Temp_Acc_Data_FD, Temp_Acc_Data_FD_Labels];']);
+
+    % getting user data count
+    Acc_Data_FD_U = labelIndex;
+    
+    % Increment the label index for the next block
+    labelIndex = labelIndex + 1;
+end
