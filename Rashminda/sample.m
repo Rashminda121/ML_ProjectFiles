@@ -181,6 +181,53 @@ figure;
 heatmap(cm, 'Title', 'Confusion Matrix', 'XLabel', 'Predicted', 'YLabel', 'Actual');
 
 
+% ROC Curve and AUC
+% actual predicted probabilities from the model
+
+[X, Y, T, AUC] = perfcurve(testLabels, predictions', 1);
+figure;
+plot(X, Y);
+xlabel('False Positive Rate');
+ylabel('True Positive Rate');
+title(['ROC Curve (AUC = ', num2str(AUC), ')']);
+
+
+% Learning Curves
+
+figure;
+plot(tr.epoch, tr.perf);
+title('Training Performance vs Epoch');
+xlabel('Epoch');
+ylabel('Performance (Error)');
+
+
+
+% Calculate Precision, Recall, and F1-Score
+
+precision = cm(2,2) / (cm(2,2) + cm(1,2));  % TP / (TP + FP)
+recall = cm(2,2) / (cm(2,2) + cm(2,1));     % TP / (TP + FN)
+f1Score = 2 * (precision * recall) / (precision + recall);
+
+% Display metrics
+disp(['Precision: ', num2str(precision)]);
+disp(['Recall: ', num2str(recall)]);
+disp(['F1-Score: ', num2str(f1Score)]);
+
+% Plot Precision, Recall, and F1-Score
+metrics = [precision, recall, f1Score];
+metricNames = {'Precision', 'Recall', 'F1-Score'};
+
+figure;
+bar(metrics);  % Create a bar plot
+set(gca, 'xticklabel', metricNames);  % Set the x-axis labels as metric names
+ylabel('Score');  % Label for the y-axis
+title('Model Evaluation Metrics');  % Title for the plot
+
+% Display the plot
+grid on;
+
+
+
 
 % Display the best training performance and epoch
 disp(['Best Training Performance: ', num2str(bestPerformance)]);
