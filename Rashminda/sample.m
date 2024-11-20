@@ -55,27 +55,43 @@ for i = 1:36:num_rows
 
     % getting user data count
     Acc_Data_FD_U = labelIndex;
+
+    % Creating user label set for the current labelIndex
+    eval(['Temp_Acc_Data_FD_UL' num2str(labelIndex) ' = Temp_Acc_Data_FD_Labels;']);
     
     % Increment the label index for the next block
     labelIndex = labelIndex + 1;
 end
+
+% Temp_Acc_Data_FD_U = temp user dataset created
+% Temp_Acc_Data_FD_UL = temp user labels created
 
 
 
 
 % Traning data 
 
+% load data for each temp user dataset
+
+u_num = 1; % change u_num value to select a user from 1:10
+hidden_layers = [4 2 4]; % change hidden layers 
+training_per = 0.6; % 60% training
+testing_per = 0.4; % 40% testing
+
+datasetName = ['Temp_Acc_Data_FD_U', num2str(u_num)];
+data = eval(datasetName);
+
 % Split the Data into Training (60%) and Testing (40%)
-numSamples = size(Temp_Acc_Data_FD_U1, 1);
+numSamples = size(data, 1); 
 idx = randperm(numSamples);  % Random permutation of indices for data shuffling
 
 % Separate features and labels
-features = Temp_Acc_Data_FD_U1(:, 1:end-1);  % All columns except the last one are features
-labels = Temp_Acc_Data_FD_U1(:, end);        % Last column is the label
+features = data(:, 1:end-1);  % All columns except the last one are features
+labels = data(:, end);        % Last column is the label
 
 % Split into training (60%) and testing (40%)
-trainIdx = idx(1:round(0.6 * numSamples));
-testIdx = idx(round(0.6 * numSamples) + 1:end);
+trainIdx = idx(1:round(training_per * numSamples));
+testIdx = idx(round(training_per * numSamples) + 1:end);
 
 trainData = features(trainIdx, :);
 trainLabels = labels(trainIdx);
@@ -85,12 +101,12 @@ testLabels = labels(testIdx);
 
 % Create and Train the Neural Network
 % Use a feedforward network with hidden layers [4 2 4]
-net = feedforwardnet([4 2 4]);  % Hidden layers with 4, 2, and 4 neurons
+net = feedforwardnet(hidden_layers);  % Hidden layers with 4, 2, and 4 neurons
 
 % Configure the network division (training, validation, and testing)
-net.divideParam.trainRatio = 0.6; % 60% training
+net.divideParam.trainRatio = training_per; % 60% training
 % net.divideParam.valRatio = 0.2;   % 20% validation (used for performance tracking)
-net.divideParam.testRatio = 0.4;  % 40% testing (used for performance tracking)
+net.divideParam.testRatio = testing_per ;  % 40% testing (used for performance tracking)
 net.divideParam.valRatio = 0.0;  % Set validation ratio to 0 (no validation data used)
 
 % Train the network (with validation and testing)
@@ -160,6 +176,7 @@ end
 cm = confusionmat(testLabels, predictions');
 disp('Confusion Matrix:');
 disp(cm);
+disp(' ');
 
 % Create a bar plot for the confusion matrix
 figure;
@@ -212,6 +229,7 @@ f1Score = 2 * (precision * recall) / (precision + recall);
 disp(['Precision: ', num2str(precision)]);
 disp(['Recall: ', num2str(recall)]);
 disp(['F1-Score: ', num2str(f1Score)]);
+disp(' ');
 
 % Plot Precision, Recall, and F1-Score
 metrics = [precision, recall, f1Score];
@@ -228,13 +246,14 @@ grid on;
 
 
 
-
 % Display the best training performance and epoch
 disp(['Best Training Performance: ', num2str(bestPerformance)]);
 disp(['Epoch of Best Performance: ', num2str(bestEpoch)]);
+disp(' ');
 
 % Display overall accuracy
 disp(['Training Accuracy: ', sprintf('%.2f', trainAccuracy * 100), '%']);
 disp(['Testing Accuracy: ', sprintf('%.2f',testAccuracy * 100), '%']);
+disp(' ');
 
 
