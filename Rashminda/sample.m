@@ -75,8 +75,12 @@ end
 
 u_num = 1; % change u_num value to select a user from 1:10
 hidden_layers = [4 2 4]; % change hidden layers 
-training_per = 0.6; % 60% training
-testing_per = 0.4; % 40% testing
+training_per = 0.6;   % 60% training
+testing_per = 0.4;   % 40% testing
+num_epochs = 1000;  % change epochs 
+learning_rate = 0.01;   % change learning rate
+param_goal = 1e-3; % change MSE
+
 
 datasetName = ['Temp_Acc_Data_FD_U', num2str(u_num)];
 data = eval(datasetName);
@@ -99,15 +103,32 @@ trainLabels = labels(trainIdx);
 testData = features(testIdx, :);
 testLabels = labels(testIdx);
 
+
 % Create and Train the Neural Network
+
 % Use a feedforward network with hidden layers [4 2 4]
 net = feedforwardnet(hidden_layers);  % Hidden layers with 4, 2, and 4 neurons
+
 
 % Configure the network division (training, validation, and testing)
 net.divideParam.trainRatio = training_per; % 60% training
 % net.divideParam.valRatio = 0.2;   % 20% validation (used for performance tracking)
 net.divideParam.testRatio = testing_per ;  % 40% testing (used for performance tracking)
 net.divideParam.valRatio = 0.0;  % Set validation ratio to 0 (no validation data used)
+
+
+% Configure Training Parameters (Optional)
+net.trainParam.epochs = num_epochs;        % Maximum epochs
+% net.trainParam.goal = 1e-5;          % Performance goal
+net.trainParam.lr = learning_rate;    % Learning rate
+
+% Set the Performance Goal
+% net.trainParam.goal = param_goal;  % Stop training when MSE is less than 1e-5
+
+% net.trainParam.min_grad = 1e-6;  % Minimum gradient
+
+
+disp(['Default Learning Rate: ', num2str(net.trainParam.lr)]);
 
 % Train the network (with validation and testing)
 [net, tr] = train(net, trainData', trainLabels');  % Note the transpose (') for correct input format
@@ -193,7 +214,7 @@ for i = 1:numel(cm)
     text(i, cm(i), num2str(cm(i)), 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center');
 end
 
-
+% heat map for confusion matrics
 figure;
 heatmap(cm, 'Title', 'Confusion Matrix', 'XLabel', 'Predicted', 'YLabel', 'Actual');
 
@@ -207,6 +228,9 @@ plot(X, Y);
 xlabel('False Positive Rate');
 ylabel('True Positive Rate');
 title(['ROC Curve (AUC = ', num2str(AUC), ')']);
+
+disp(['AUC Value: ', num2str(AUC)]);
+disp(' ');
 
 
 % Learning Curves
@@ -257,3 +281,4 @@ disp(['Testing Accuracy: ', sprintf('%.2f',testAccuracy * 100), '%']);
 disp(' ');
 
 
+% add gradient and mu values
