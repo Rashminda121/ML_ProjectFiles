@@ -4,8 +4,8 @@ clc;
 clearvars;
 
 % Loading Data
-folderPath = 'userfilesFrq';
-fileList = dir(fullfile(folderPath, 'U*_Acc_FreqD_FDay.mat'));
+folderPath = 'userfilesCombined';
+fileList = dir(fullfile(folderPath, 'U*_Acc_TimeD_FreqD_FDay.mat'));
 
 % Initialize a cell array to store the data for each file
 Temp_Acc_Data = cell(1, length(fileList));
@@ -13,20 +13,20 @@ Temp_Acc_Data = cell(1, length(fileList));
 for nc = 1:length(fileList)
     % Load each file
     filePath = fullfile(folderPath, fileList(nc).name);
-    T_Acc_Data_FD_Day = load(filePath);
+    T_Acc_Data_FDay = load(filePath);
     
     % Extract the required data and store in Temp_Acc_Data
-    Temp_Acc_Data{nc} = T_Acc_Data_FD_Day.Acc_FD_Feat_Vec(1:36, 1:43);
+    Temp_Acc_Data{nc} = T_Acc_Data_FDay.Acc_TDFD_Feat_Vec(1:36, 1:131);
 end
 
 
 % Concatenate data from all users into a single variable
 
-Temp_Acc_Data_FD = [];
+Temp_Acc_Data_TDFD = [];
 
 % Concatenate each 36-by-43 matrix vertically
 for nc = 1:length(Temp_Acc_Data)
-    Temp_Acc_Data_FD = [Temp_Acc_Data_FD; Temp_Acc_Data{nc}];
+    Temp_Acc_Data_TDFD = [Temp_Acc_Data_TDFD; Temp_Acc_Data{nc}];
 end
 
 
@@ -34,7 +34,7 @@ end
 % Labeling data for each user 
 
 % Number of rows in the concatenated data
-num_rows = size(Temp_Acc_Data_FD, 1);
+num_rows = size(Temp_Acc_Data_TDFD, 1);
 
 % Initialize an index for labeling
 labelIndex = 1;
@@ -45,26 +45,26 @@ for i = 1:36:num_rows
     endRow = min(i + 35, num_rows);
     
     % Create a temporary label array (0s for all rows)
-    Temp_Acc_Data_FD_Labels = zeros(num_rows, 1);
+    Temp_Acc_Data_TDFD_Labels = zeros(num_rows, 1);
     
     % Label the first 36 rows in this block as 1
-    Temp_Acc_Data_FD_Labels(i:endRow) = 1;
+    Temp_Acc_Data_TDFD_Labels(i:endRow) = 1;
     
     % Store the labeled data in the corresponding Temp_Acc_Data_FD_U variable
-    eval(['Temp_Acc_Data_FD_U' num2str(labelIndex) ' = [Temp_Acc_Data_FD, Temp_Acc_Data_FD_Labels];']);
+    eval(['Temp_Acc_Data_TDFD_U' num2str(labelIndex) ' = [Temp_Acc_Data_TDFD, Temp_Acc_Data_TDFD_Labels];']);
 
     % getting user data count
-    Acc_Data_FD_U = labelIndex;
+    Acc_Data_TDFD_U = labelIndex;
 
     % Creating user label set for the current labelIndex
-    eval(['Temp_Acc_Data_FD_UL' num2str(labelIndex) ' = Temp_Acc_Data_FD_Labels;']);
+    eval(['Temp_Acc_Data_TDFD_UL' num2str(labelIndex) ' = Temp_Acc_Data_TDFD_Labels;']);
     
     % Increment the label index for the next block
     labelIndex = labelIndex + 1;
 end
 
-% Temp_Acc_Data_FD_U = temp user dataset created
-% Temp_Acc_Data_FD_UL = temp user labels created
+% Temp_Acc_Data_TDFD_U = temp user dataset created
+% Temp_Acc_Data_TDFD_UL = temp user labels created
 
 
 
@@ -81,8 +81,11 @@ learning_rate = 0.01;   % change learning rate
 param_goal = 1e-3; % change MSE
 
 
-datasetName = ['Temp_Acc_Data_FD_U', num2str(u_num)];
+datasetName = ['Temp_Acc_Data_TDFD_U', num2str(u_num)];
 data = eval(datasetName);
+
+disp(['Result dataset size: ', num2str(size(data))]);
+disp('');
 
 % Split the Data into Training (60%) and Testing (40%)
 numSamples = size(data, 1); 
