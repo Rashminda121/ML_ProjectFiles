@@ -30,11 +30,11 @@ for nc = 1:length(Temp_Acc_Data)
 end
 
 
-
 % Labeling data for each user 
 
 % Number of rows in the concatenated data
 num_rows = size(Temp_Acc_Data_TDFD, 1);
+
 
 % Initialize an index for labeling
 labelIndex = 1;
@@ -73,7 +73,7 @@ end
 % load data for each temp user dataset
 
 u_num = 1; % change u_num value to select a user from 1:10
-hidden_layers = [2 1 2]; % change hidden layers 
+hidden_layers = [10 10 10]; % change hidden layers 
 training_per = 0.6;   % 60% training
 testing_per = 0.4;   % 40% testing
 num_epochs = 1000;  % change epochs 
