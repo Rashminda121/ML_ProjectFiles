@@ -1,5 +1,5 @@
-% Load and preprocess time datasets
-fileNames = {'Acc_TimeD_FDay.mat', 'Acc_TimeD_MDay.mat'};
+% Load and preprocess time-frequency datasets
+fileNames = {'Acc_TimeD_FreqD_FDay.mat', 'Acc_TimeD_FreqD_MDay.mat'};
 userData = struct();
 
 % Loop through users and datasets to load data
@@ -17,26 +17,26 @@ for userID = 1:10
 end
 
 % Define the fields and initialize storage for calculations
-datasetFieldsFreq = {'Acc_FreqD_FDay', 'Acc_FD_Feat_Vec'; 
-                     'Acc_FreqD_MDay', 'Acc_FD_Feat_Vec'};
-meanFreqValues = zeros(10, 2);  
-intraFreqVarianceValues = zeros(10, 2);
-interFreqVarianceValues = zeros(2, 1);
+datasetFieldsTimeFreq = {'Acc_TimeD_FreqD_FDay', 'Acc_TDFD_Feat_Vec'; 
+                     'Acc_TimeD_FreqD_MDay', 'Acc_TDFD_Feat_Vec'};
+meanTimeFreqValues = zeros(10, 2);  
+intraTimeFreqVarianceValues = zeros(10, 2);
+interTimeFreqVarianceValues = zeros(2, 1);
 
 % Feature calculation for mean, intra-variance, and inter-variance
 for userID = 1:10
     for datasetIdx = 1:2
-        datasetName = datasetFieldsFreq{datasetIdx, 1};
+        datasetName = datasetFieldsTimeFreq{datasetIdx, 1};
         fieldName = sprintf('U%02d_%s', userID, datasetName);
         if isfield(userData, fieldName)
-            featureField = datasetFieldsFreq{datasetIdx, 2};
+            featureField = datasetFieldsTimeFreq{datasetIdx, 2};
             data = userData.(fieldName).(featureField);
 
             meanData = mean(data, 1);
-            meanFreqValues(userID, datasetIdx) = mean(meanData);
+            meanTimeFreqValues(userID, datasetIdx) = mean(meanData);
 
             intraVariance = var(data, 0, 1);
-            intraFreqVarianceValues(userID, datasetIdx) = mean(intraVariance);
+            intraTimeFreqVarianceValues(userID, datasetIdx) = mean(intraVariance);
 
             allData = [];
             for otherUserID = 1:10
@@ -47,69 +47,69 @@ for userID = 1:10
                 end
             end
             interVariance = var(allData, 0, 1);
-            interFreqVarianceValues(datasetIdx) = mean(interVariance);
+            interTimeFreqVarianceValues(datasetIdx) = mean(interVariance);
         end
     end
 end
 
-% Plot the results for Frequency Data
+% Plot the results for Time-Frequency Data with Different Colors for Each Bar Graph
 figure;
 
 % Define unique custom colors for each bar graph
-colorsMean = [0.2 0.7 0.5;  % Green
-              0.6 0.4 0.8]; % Purple
-colorsIntra = [0.8 0.3 0.3;  % Red
-               0.3 0.6 0.9]; % Blue
-colorsInter = [0.4 0.4 0.8;  % Dark Blue
-               0.9 0.7 0.3]; % Yellow
+colorsMean = [0.2 0.6 0.8;  % Light Blue
+              0.9 0.3 0.3]; % Red
+colorsIntra = [0.4 0.4 0.9;  % Purple
+               0.3 0.8 0.3]; % Green
+colorsInter = [0.8 0.5 0.1;  % Orange
+               0.5 0.7 0.9]; % Light Blue-Gray
 
-% Plot Mean Values for Frequency Data
+% Plot Mean Values for Time-Frequency Data
 subplot(3, 1, 1);
-b1 = bar(meanFreqValues);
-title('Mean Values for Frequency Data (For Each User)');
+b1 = bar(meanTimeFreqValues);
+title('Mean Values for Time-Frequency Combined Data (For Each User)');
 xlabel('User Number');
 ylabel('Mean');
-legend(datasetFieldsFreq(:,1), 'Location', 'best');
+legend(datasetFieldsTimeFreq(:,1), 'Location', 'best');
 for k = 1:numel(b1)
     b1(k).FaceColor = 'flat';
     b1(k).CData = colorsMean(k, :); % Apply colors to each bar group
 end
 
-% Plot Intra-Variance Values for Frequency Data
+% Plot Intra-Variance Values for Time-Frequency Data
 subplot(3, 1, 2);
-b2 = bar(intraFreqVarianceValues);
-title('Intra Variance for Frequency Data (For Each User)');
+b2 = bar(intraTimeFreqVarianceValues);
+title('Intra Variance for Time-Frequency Data (For Each User)');
 xlabel('User Number');
 ylabel('Intra Variance');
-legend(datasetFieldsFreq(:,1), 'Location', 'best');
+legend(datasetFieldsTimeFreq(:,1), 'Location', 'best');
 for k = 1:numel(b2)
     b2(k).FaceColor = 'flat';
     b2(k).CData = colorsIntra(k, :); % Apply colors to each bar group
 end
 
-% Plot Inter-Variance Values for Frequency Data
+% Plot Inter-Variance Values for Time-Frequency Data
 subplot(3, 1, 3);
-b3 = bar(interFreqVarianceValues);
-title('Inter Variance for Frequency Data (Comparing All 10 Users With Each Other)');
+b3 = bar(interTimeFreqVarianceValues);
+title('Inter Variance for Time-Frequency Data (Comparing All 10 Users With Each Other)');
 xlabel('Dataset');
 ylabel('Inter Variance');
 xticks(1:2);
-xticklabels(datasetFieldsFreq(:,1));
+xticklabels(datasetFieldsTimeFreq(:,1));
 legend('Inter Variance', 'Location', 'best');
 for k = 1:numel(b3)
-    b3(k).FaceColor = 'flat';
-    b3(k).CData = colorsInter(k, :); % Apply colors to each dataset
+    b3(k).FaceColor = colorsInter(k, :); % Apply different colors to each dataset
 end
+
 
 % Prepare the data for training and testing
 X = [];
 Y = [];
 for userID = 1:10
     for datasetIdx = 1:2
-        datasetName = datasetFieldsFreq{datasetIdx, 1};
+        datasetName = datasetFieldsTimeFreq{datasetIdx, 1};
         fieldName = sprintf('U%02d_%s', userID, datasetName);
         if isfield(userData, fieldName)
-            featureField = datasetFieldsFreq{datasetIdx, 2};
+            featureField = datasetFieldsTimeFreq{datasetIdx, 2};
             data = userData.(fieldName).(featureField);
             X = [X; data];
             Y = [Y; repmat(userID, size(data, 1), 1)];

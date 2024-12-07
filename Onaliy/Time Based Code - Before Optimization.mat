@@ -1,5 +1,5 @@
-% Load and preprocess frequency datasets
-fileNames = {'Acc_FreqD_FDay.mat', 'Acc_FreqD_MDay.mat'};
+% Load and preprocess time-domain datasets
+fileNames = {'Acc_TimeD_FDay.mat', 'Acc_TimeD_MDay.mat'}; % Adjusted file names for time-domain data
 userData = struct();
 
 % Loop through users and datasets to load data
@@ -24,7 +24,7 @@ for userID = 1:10
         datasetName = fileNames{datasetIdx}(1:end-4); % Remove .mat extension
         fieldName = sprintf('U%02d_%s', userID, datasetName);
         if isfield(userData, fieldName)
-            featureField = 'Acc_FD_Feat_Vec'; % Adjust field name as needed
+            featureField = 'Acc_TD_Feat_Vec'; % Adjust field name for time-domain features
             data = userData.(fieldName).(featureField);
             X = [X; data];
             Y = [Y; repmat(userID, size(data, 1), 1)];
@@ -33,26 +33,26 @@ for userID = 1:10
 end
 
 % Define the fields and initialize storage for calculations
-datasetFieldsFreq = {'Acc_FreqD_FDay', 'Acc_FD_Feat_Vec'; 
-                     'Acc_FreqD_MDay', 'Acc_FD_Feat_Vec'};
-meanFreqValues = zeros(10, 2);  
-intraFreqVarianceValues = zeros(10, 2);
-interFreqVarianceValues = zeros(2, 1);
+datasetFieldsTime = {'Acc_TimeD_FDay', 'Acc_TD_Feat_Vec'; 
+                     'Acc_TimeD_MDay', 'Acc_TD_Feat_Vec'};
+meanTimeValues = zeros(10, 2);
+intraTimeVarianceValues = zeros(10, 2);
+interTimeVarianceValues = zeros(2, 1);
 
 % Feature calculation for mean, intra-variance, and inter-variance
 for userID = 1:10
     for datasetIdx = 1:2
-        datasetName = datasetFieldsFreq{datasetIdx, 1};
+        datasetName = datasetFieldsTime{datasetIdx, 1};
         fieldName = sprintf('U%02d_%s', userID, datasetName);
         if isfield(userData, fieldName)
-            featureField = datasetFieldsFreq{datasetIdx, 2};
+            featureField = datasetFieldsTime{datasetIdx, 2};
             data = userData.(fieldName).(featureField);
 
             meanData = mean(data, 1);
-            meanFreqValues(userID, datasetIdx) = mean(meanData);
+            meanTimeValues(userID, datasetIdx) = mean(meanData);
 
             intraVariance = var(data, 0, 1);
-            intraFreqVarianceValues(userID, datasetIdx) = mean(intraVariance);
+            intraTimeVarianceValues(userID, datasetIdx) = mean(intraVariance);
 
             allData = [];
             for otherUserID = 1:10
@@ -63,45 +63,45 @@ for userID = 1:10
                 end
             end
             interVariance = var(allData, 0, 1);
-            interFreqVarianceValues(datasetIdx) = mean(interVariance);
+            interTimeVarianceValues(datasetIdx) = mean(interVariance);
         end
     end
 end
 
-% Plot the results for Frequency Data
+% Plot the results for Time-Based Data
 figure;
 
-% Plot Mean Values for Frequency Data
+% Plot Mean Values for Time-Based Data
 subplot(3, 1, 1);
-bar(meanFreqValues);
-title('Mean Values for Frequency Data (Each User and Dataset)');
+bar(meanTimeValues);
+title('Mean Values for Time-Based Data (Each User and Dataset)');
 xlabel('User ID');
 ylabel('Mean');
-legend(datasetFieldsFreq(:,1), 'Location', 'best');
+legend(datasetFieldsTime(:,1), 'Location', 'best');
 
-% Plot Intra-Variance Values for Frequency Data
+% Plot Intra-Variance Values for Time-Based Data
 subplot(3, 1, 2);
-bar(intraFreqVarianceValues);
-title('Intra Variance for Frequency Data (Each User and Dataset)');
+bar(intraTimeVarianceValues);
+title('Intra Variance for Time-Based Data (Each User and Dataset)');
 xlabel('User ID');
 ylabel('Intra Variance');
-legend(datasetFieldsFreq(:,1), 'Location', 'best');
+legend(datasetFieldsTime(:,1), 'Location', 'best');
 
-% Plot Inter-Variance Values for Frequency Data
+% Plot Inter-Variance Values for Time-Based Data
 subplot(3, 1, 3);
-bar(interFreqVarianceValues);
-title('Inter Variance for Frequency Data (Across All Users)');
+bar(interTimeVarianceValues);
+title('Inter Variance for Time-Based Data (Across All Users)');
 xlabel('Dataset');
 ylabel('Inter Variance');
 xticks(1:2);
-xticklabels(datasetFieldsFreq(:,1));
+xticklabels(datasetFieldsTime(:,1));
 legend('Inter Variance', 'Location', 'best');
 
 % Add random noise to the data
 noiseLevel = 0.5; 
 X = X + noiseLevel * randn(size(X));
 
-
+% Normalize the data
 % X = normalize(X, 'range'); 
 
 % Split the data into training and testing sets
@@ -137,7 +137,6 @@ net.divideParam.testRatio = 0.3;
 % Plot training performance
 figure;
 plotperform(tr);
-
 
 % Test the network
 YPred = net(XTest');
