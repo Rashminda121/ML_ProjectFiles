@@ -1,0 +1,83 @@
+% Load and preprocess frequency datasets
+fileNames = {'Acc_FreqD_FDay.mat', 'Acc_FreqD_MDay.mat'};
+userData = struct();
+
+% Loop through users and datasets to load data
+for userID = 1:10
+    for datasetIdx = 1:2
+        fileName = sprintf('U%02d_%s', userID, fileNames{datasetIdx});
+        if exist(fileName, 'file')
+            loadedData = load(fileName);
+            fieldName = sprintf('U%02d_%s', userID, fileNames{datasetIdx}(1:end-4));
+            userData.(fieldName) = loadedData;
+        else
+            warning('File %s does not exist!', fileName);
+        end
+    end
+end
+
+% Prepare the data for training and testing
+X = [];
+Y = [];
+for userID = 1:10
+    for datasetIdx = 1:2
+        datasetName = fileNames{datasetIdx}(1:end-4); % Remove .mat extension
+        fieldName = sprintf('U%02d_%s', userID, datasetName);
+        if isfield(userData, fieldName)
+            featureField = 'Acc_FD_Feat_Vec'; % Adjust field name as needed
+            data = userData.(fieldName).(featureField);
+            X = [X; data];
+            Y = [Y; repmat(userID, size(data, 1), 1)];
+        end
+    end
+end
+
+% Add random noise to the data
+noiseLevel = 0.5; 
+X = X + noiseLevel * randn(size(X));
+
+
+% X = normalize(X, 'range'); 
+
+% Split the data into training and testing sets
+cv = cvpartition(Y, 'HoldOut', 0.3);
+XTrain = X(training(cv), :);
+YTrain = Y(training(cv), :);
+XTest = X(test(cv), :);
+YTest = Y(test(cv), :);
+
+% Shuffle the labels to make the problem nonsensical
+YTrain = YTrain(randperm(length(YTrain)));
+YTest = YTest(randperm(length(YTest)));
+
+% Convert labels to one-hot encoding
+YTrainOneHot = full(ind2vec(YTrain'));
+YTestOneHot = full(ind2vec(YTest'));
+
+% Create and configure the neural network
+hiddenLayerSize = 2; 
+net = feedforwardnet(hiddenLayerSize);
+
+% Set a high learning rate
+net.trainParam.lr = 0.1;
+
+% Remove validation data from network configuration
+net.divideParam.trainRatio = 0.7; 
+net.divideParam.valRatio = 0.0;   
+net.divideParam.testRatio = 0.3;
+
+% Train the neural network
+[net, tr] = train(net, XTrain', YTrainOneHot);
+
+% Plot training performance
+figure;
+plotperform(tr);
+
+
+% Test the network
+YPred = net(XTest');
+YPredLabels = vec2ind(YPred);
+
+% Calculate accuracy
+accuracy = sum(YPredLabels' == YTest) / length(YTest);
+fprintf('Test Accuracy: %.2f%%\n', accuracy * 100);
