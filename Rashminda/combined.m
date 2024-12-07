@@ -175,16 +175,6 @@ grid on;
 
 
 
-%{ 
-
-Display the results
-disp('Training Accuracy:');
-disp(trainAccuracy * 100);
-
-disp('Testing Accuracy:');
-disp(testAccuracy * 100); 
-
-%}
 
 % Plot the Performance Graph
 figure;
