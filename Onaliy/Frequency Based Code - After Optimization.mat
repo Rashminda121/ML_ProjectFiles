@@ -1,0 +1,134 @@
+% Load and preprocess frequency datasets
+fileNames = {'Acc_FreqD_FDay.mat', 'Acc_FreqD_MDay.mat'};
+userData = struct();
+
+% Loop through users and datasets to load data
+for userID = 1:10
+    for datasetIdx = 1:2
+        fileName = sprintf('U%02d_%s', userID, fileNames{datasetIdx});
+        if exist(fileName, 'file')
+            loadedData = load(fileName);
+            fieldName = sprintf('U%02d_%s', userID, fileNames{datasetIdx}(1:end-4));
+            userData.(fieldName) = loadedData;
+        else
+            warning('File %s does not exist!', fileName);
+        end
+    end
+end
+
+% Define the fields and initialize storage for calculations
+datasetFieldsFreq = {'Acc_FreqD_FDay', 'Acc_FD_Feat_Vec'; 
+                     'Acc_FreqD_MDay', 'Acc_FD_Feat_Vec'};
+meanFreqValues = zeros(10, 2);  
+intraFreqVarianceValues = zeros(10, 2);
+interFreqVarianceValues = zeros(2, 1);
+
+% Feature calculation for mean, intra-variance, and inter-variance
+for userID = 1:10
+    for datasetIdx = 1:2
+        datasetName = datasetFieldsFreq{datasetIdx, 1};
+        fieldName = sprintf('U%02d_%s', userID, datasetName);
+        if isfield(userData, fieldName)
+            featureField = datasetFieldsFreq{datasetIdx, 2};
+            data = userData.(fieldName).(featureField);
+
+            meanData = mean(data, 1);
+            meanFreqValues(userID, datasetIdx) = mean(meanData);
+
+            intraVariance = var(data, 0, 1);
+            intraFreqVarianceValues(userID, datasetIdx) = mean(intraVariance);
+
+            allData = [];
+            for otherUserID = 1:10
+                otherFieldName = sprintf('U%02d_%s', otherUserID, datasetName);
+                if isfield(userData, otherFieldName)
+                    otherData = userData.(otherFieldName).(featureField);
+                    allData = [allData; otherData];
+                end
+            end
+            interVariance = var(allData, 0, 1);
+            interFreqVarianceValues(datasetIdx) = mean(interVariance);
+        end
+    end
+end
+
+% Plot the results for Frequency Data
+figure;
+
+% Plot Mean Values for Frequency Data
+subplot(3, 1, 1);
+bar(meanFreqValues);
+title('Mean Values for Frequency Data (Each User and Dataset)');
+xlabel('User ID');
+ylabel('Mean');
+legend(datasetFieldsFreq(:,1), 'Location', 'best');
+
+% Plot Intra-Variance Values for Frequency Data
+subplot(3, 1, 2);
+bar(intraFreqVarianceValues);
+title('Intra Variance for Frequency Data (Each User and Dataset)');
+xlabel('User ID');
+ylabel('Intra Variance');
+legend(datasetFieldsFreq(:,1), 'Location', 'best');
+
+% Plot Inter-Variance Values for Frequency Data
+subplot(3, 1, 3);
+bar(interFreqVarianceValues);
+title('Inter Variance for Frequency Data (Across All Users)');
+xlabel('Dataset');
+ylabel('Inter Variance');
+xticks(1:2);
+xticklabels(datasetFieldsFreq(:,1));
+legend('Inter Variance', 'Location', 'best');
+
+% Prepare the data for training and testing
+X = [];
+Y = [];
+for userID = 1:10
+    for datasetIdx = 1:2
+        datasetName = datasetFieldsFreq{datasetIdx, 1};
+        fieldName = sprintf('U%02d_%s', userID, datasetName);
+        if isfield(userData, fieldName)
+            featureField = datasetFieldsFreq{datasetIdx, 2};
+            data = userData.(fieldName).(featureField);
+            X = [X; data];
+            Y = [Y; repmat(userID, size(data, 1), 1)];
+        end
+    end
+end
+
+% Normalize the features
+X = normalize(X, 'range');
+
+% Split the data into training and testing sets
+cv = cvpartition(Y, 'HoldOut', 0.3);
+XTrain = X(training(cv), :);
+YTrain = Y(training(cv), :);
+XTest = X(test(cv), :);
+YTest = Y(test(cv), :);
+
+% Convert labels to one-hot encoding
+YTrainOneHot = full(ind2vec(YTrain'));
+YTestOneHot = full(ind2vec(YTest'));
+
+% Create and configure the neural network
+hiddenLayerSize = 10; % Adjust based on experimentation
+net = feedforwardnet(hiddenLayerSize);
+
+% Configure the training parameters
+net.trainParam.epochs = 1000;  
+net.trainParam.lr = 0.1;    
+net.divideParam.valRatio = 0.0; 
+net.trainParam.goal = 1e-5;   
+net.trainParam.max_fail = 3; 
+net.performParam.regularization = 0.001; 
+% Train the neural network
+net = train(net, XTrain', YTrainOneHot);
+
+% Test the network
+YPred = net(XTest');
+YPredLabels = vec2ind(YPred);
+
+% Calculate accuracy
+accuracy = sum(YPredLabels' == YTest) / length(YTest);
+fprintf('Test Accuracy: %.2f%%\n', accuracy * 100);
