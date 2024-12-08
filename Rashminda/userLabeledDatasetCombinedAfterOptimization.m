@@ -530,14 +530,7 @@ ylim([min(score(:, 2)) - 1, max(score(:, 2)) + 1]);
 legend('show', 'Location', 'bestoutside');
 
 
-
-%%
-
-
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 
 % ROC Curve and AUC
 % actual predicted probabilities from the model
