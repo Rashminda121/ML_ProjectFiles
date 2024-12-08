@@ -476,6 +476,7 @@ interClassVariance = mean(var(userMeans, 0, 1));
 % Display the inter-class variance
 fprintf('Inter-Class Variance: %.4f\n', interClassVariance);
 
+
 % Plot the inter-class variance as a bar chart
 figure;
 bar(interClassVariance, 'FaceColor', [0.5, 0, 0.5]);  
@@ -483,6 +484,35 @@ title('Inter-Class Variance');
 ylabel('Variance Value');
 set(gca, 'XTickLabel', {'Inter-Class Variance'});
 grid on;
+
+
+%%%%
+
+% Compute inter-class variance (variance of user means across features)
+interClassVariancePerUser = sum((userMeans - overallMean).^2, 2) / numFeatures;
+
+% Plot the inter-class variance for each user with different colors and labels
+figure;
+colors = lines(numUsers); % Generate distinct colors for each user
+
+barHandle = bar(interClassVariancePerUser);
+barHandle.FaceColor = 'flat'; % Enable color customization
+
+% Assign a unique color to each bar
+for i = 1:numUsers
+    barHandle.CData(i, :) = colors(i, :);
+end
+
+% Customize plot appearance
+title('Inter-Class Variance for Each User');
+xlabel('Users');
+ylabel('Variance Value');
+grid on;
+
+% Set custom user labels
+userLabels = arrayfun(@(x) sprintf('User %d', x), 1:numUsers, 'UniformOutput', false);
+set(gca, 'XTick', 1:numUsers, 'XTickLabel', userLabels);
+
 
 
 %%%%
